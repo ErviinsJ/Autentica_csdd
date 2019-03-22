@@ -1,0 +1,4 @@
+create table nummuri (  
+nummurs varchar(7) not null constraint modelis_pk primary key,  
+statuss varchar2(20),
+spec number(1) DEFAULT 0);
