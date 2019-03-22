@@ -1,0 +1,23 @@
+create table markas (  
+ID number(4,0) not null constraint marka_pk primary key,  
+marka varchar2(20) unique);
+
+alter table markas
+add constraint marka_con CHECK (marka not like '%[^0-9A-Z]%');
+
+CREATE SEQUENCE seq_marka
+MINVALUE 1
+START WITH 1
+INCREMENT BY 1
+CACHE 10;
+
+insert into markas values (seq_marka.nextval,'AUDI');
+insert into markas values (seq_marka.nextval,'ALFA ROMEO');
+insert into markas values (seq_marka.nextval,'BENTLEY');
+insert into markas values (seq_marka.nextval,'BMW');
+insert into markas values (seq_marka.nextval,'CHEVROLET');
+insert into markas values (seq_marka.nextval,'CITROEN');
+insert into markas values (seq_marka.nextval,'FERRARI');
+insert into markas values (seq_marka.nextval,'Mercedes');
+
+select * from markas;
