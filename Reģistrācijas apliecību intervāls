@@ -1,0 +1,3 @@
+create table regaplinterv
+struktAplBurti varchar(2) not null,
+nogenRaplNr number(1) DEFAULT 0);
