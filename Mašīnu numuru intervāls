@@ -1,0 +1,31 @@
+create table numinterv(
+struktnrBurti varchar(2) not null,
+nogenMNr number(1) DEFAULT 0);
+
+drop sequence seq_strukt_nr;
+
+CREATE SEQUENCE seq_strukt_nr
+start with 65
+increment by 1
+maxvalue 90
+CYCLE;
+
+CREATE SEQUENCE seq_strukt_nr1
+start with 65
+increment by 1
+maxvalue 90
+CYCLE;
+
+
+select * from strukturv;
+
+declare
+  temp number(2);
+begin
+    temp := seq_strukt_nr.CURRVAL;
+    if temp = 66 then
+    dbms_output.put_line(temp);
+    end if;
+    dbms_output.put_line(temp);
+end;
+/
