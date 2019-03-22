@@ -1,0 +1,31 @@
+create table modeli (  
+mod_ID number(4,0) not null constraint modelis_pk primary key,  
+modelis varchar2(20),
+marka_id number(4,0) not null);
+
+
+   ALTER TABLE modeli ADD
+CONSTRAINT mod_mark_fk FOREIGN KEY (marka_id) REFERENCES markas (id);
+
+drop table modeli;
+
+CREATE SEQUENCE seq_modelis
+MINVALUE 1
+START WITH 1
+INCREMENT BY 1
+CACHE 10;
+
+insert into modeli values (seq_modelis.nextval,'A4',1);
+insert into modeli values (seq_modelis.nextval,'A6',1);
+insert into modeli values (seq_modelis.nextval,'RS6',1);
+insert into modeli values (seq_modelis.nextval,'E220',8);
+insert into modeli values (seq_modelis.nextval,'S500',8);
+
+
+select * from modeli;
+
+
+select ma.marka as Marka, 
+       mo.modelis as Modelis 
+from modeli mo
+left join markas ma on ma.id = mo.marka_id;
