@@ -1,0 +1,59 @@
+create table numuri (  
+numurs varchar(7) not null constraint nr_pk primary key,  
+statuss varchar2(20),
+spec number(1) DEFAULT 0);
+
+
+insert into numuri values ('AA1212', 'b', 0);
+insert into numuri values ('AB1211', 'b', 0);
+insert into numuri values ('AA1132', 'b', 0);
+insert into numuri values ('KASPARS', 'b', 1);
+insert into numuri values ('AA1213', 'b', 0);
+insert into numuri values ('AA2212', 'b', 0);
+insert into numuri values ('AA1111', 'b', 0);
+
+select * from numuri;
+
+create or replace package next_numb
+is
+  procedure auto_nr(strukt number);
+end;
+/
+
+create or replace package body next_numb
+is
+-- Numura pirmais un otrais burts char un ascii veidā
+  burti varchar2(7);
+  burts2 varchar2(1);
+  burts1 varchar2(1);
+  cipari number(4);
+  procedure auto_nr(strukt number)
+  is
+  begin
+  
+    select numurs into burti
+    from ( select n.*, max(numurs) over () as max_id
+               from numuri n
+               where n.spec = 0
+            )
+    where numurs = max_id;
+    
+    select SUBSTR(burti, 2, 1) into burts2 from dual;
+    select SUBSTR(burti, 1, 1) into burts1 from dual;
+    select TO_NUMBER(SUBSTR(burti, 3, 4),'9999') into cipari from dual;
+    
+    cipari := cipari +1;
+    
+    dbms_output.put_line(burti);
+
+    burti := burts1 || burts2;
+    dbms_output.put_line(burti||cipari);
+    --insert into numinterv values (num_interv_id.nextval, burti ,0, strukt);
+ 
+  end auto_nr;
+begin
+  NULL;
+end;
+/
+
+exec next_numb.auto_nr(2);
