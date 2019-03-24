@@ -1,5 +1,4 @@
 
---drop table numinterv;
 create table numinterv(
 id number(5,0) not null constraint num_interv_pk primary key,
 nrBurti varchar(2) not null,
@@ -17,6 +16,8 @@ INCREMENT BY 1
 CACHE 10;
 
 insert into numinterv values (num_interv_id.nextval, 'AA', 0, 1);
+insert into numinterv values (num_interv_id.nextval, 'AB', 0, 2);
+insert into numinterv values (num_interv_id.nextval, 'AX', 0, 1);
 --insert into numinterv values (num_interv_id.nextval, 'AP', 0, 2);
 
 
@@ -24,10 +25,11 @@ select *
 from numinterv
 ORDER BY ID;
 
-select ma.marka as Marka, 
-       mo.modelis as Modelis 
-from modeli mo
-left join markas ma on ma.id = mo.marka_id;
+select s.nosauk as Strukturvieniba,
+    i.nrBurti as Intervals 
+        
+from numinterv i
+left join strukturv s on s.id = i.strukt_id;
 
 
 create or replace package next_numb_interv
@@ -38,6 +40,7 @@ end;
 
 create or replace package body next_numb_interv
 is
+-- Numura pirmais un otrais burts char un ascii veidā
   burti varchar2(2);
   burts2 varchar2(1);
   burts1 varchar2(1);
@@ -59,7 +62,7 @@ is
     burts2ASCII := ascii(burts2);
     
 
-    
+-- ja numura otrais burts ir Z maina pirmo burtu uz nākamo    
     if burts2ASCII = 90 then
     burts1ascii := ascii(burts1);
     burts1ASCII := burts1ASCII + 1;
@@ -71,15 +74,19 @@ is
     end if;
 
 
-
+-- Pārbauda vai numuram netiek piešķirts angļu alfabēta burts
     CASE
         WHEN burts1 = 'Q' THEN 
             burts1 :='R';
         WHEN burts1 = 'W' THEN 
             burts1 := 'Z';
+        WHEN burts1 = 'X' THEN 
+            burts1 := 'Z';
         WHEN burts2 = 'Q' THEN 
             burts2 :='R';
         WHEN burts2 = 'W' THEN 
+            burts2 := 'Z';
+        WHEN burts2 = 'X' THEN 
             burts2 := 'Z';
         ELSE NULL;
     END case;
@@ -97,4 +104,4 @@ begin
 end;
 /
 
-exec next_numb_interv.next_nr(3);
+exec next_numb_interv.next_nr(2);
