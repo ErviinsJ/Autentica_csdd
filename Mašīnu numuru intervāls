@@ -1,31 +1,100 @@
+
+--drop table numinterv;
 create table numinterv(
-struktnrBurti varchar(2) not null,
-nogenMNr number(1) DEFAULT 0);
+id number(5,0) not null constraint num_interv_pk primary key,
+nrBurti varchar(2) not null,
+nogenMNr number(1) DEFAULT 0,
+strukt_id number(5,0) not null);
 
-drop sequence seq_strukt_nr;
+ALTER TABLE numinterv ADD
+CONSTRAINT num_strukt_fk FOREIGN KEY (strukt_id) REFERENCES strukturv (id);
 
-CREATE SEQUENCE seq_strukt_nr
-start with 65
-increment by 1
-maxvalue 90
-CYCLE;
+--drop sequence num_interv_id;
+CREATE SEQUENCE num_interv_id
+MINVALUE 1
+START WITH 1
+INCREMENT BY 1
+CACHE 10;
 
-CREATE SEQUENCE seq_strukt_nr1
-start with 65
-increment by 1
-maxvalue 90
-CYCLE;
+insert into numinterv values (num_interv_id.nextval, 'AA', 0, 1);
+--insert into numinterv values (num_interv_id.nextval, 'AP', 0, 2);
 
 
-select * from strukturv;
+select * 
+from numinterv
+ORDER BY ID;
 
-declare
-  temp number(2);
-begin
-    temp := seq_strukt_nr.CURRVAL;
-    if temp = 66 then
-    dbms_output.put_line(temp);
-    end if;
-    dbms_output.put_line(temp);
+select ma.marka as Marka, 
+       mo.modelis as Modelis 
+from modeli mo
+left join markas ma on ma.id = mo.marka_id;
+
+
+create or replace package next_numb_interv
+is
+  procedure next_nr(strukt number);
 end;
 /
+
+create or replace package body next_numb_interv
+is
+  burti varchar2(2);
+  burts2 varchar2(1);
+  burts1 varchar2(1);
+  burts2ASCII number(3);
+  burts1ASCII number(3);
+  procedure next_nr(strukt number)
+  is
+  begin
+  
+    select nrburti into burti
+    from ( select n.*, max(id) over () as max_id
+               from numinterv n
+                    )
+    where id = max_id;
+    
+    select SUBSTR(burti, 2, 1) into burts2 from dual;
+    select SUBSTR(burti, 1, 1) into burts1 from dual;
+    
+    burts2ASCII := ascii(burts2);
+    
+
+    
+    if burts2ASCII = 90 then
+    burts1ascii := ascii(burts1);
+    burts1ASCII := burts1ASCII + 1;
+    burts1 := chr(burts1ascii);
+    burts2 := 'A';
+    else
+    burts2ASCII := burts2ASCII + 1;
+    burts2 := chr(burts2ascii);
+    end if;
+
+
+
+    CASE
+        WHEN burts1 = 'Q' THEN 
+            burts1 :='R';
+        WHEN burts1 = 'W' THEN 
+            burts1 := 'Z';
+        WHEN burts2 = 'Q' THEN 
+            burts2 :='R';
+        WHEN burts2 = 'W' THEN 
+            burts2 := 'Z';
+        ELSE NULL;
+    END case;
+
+    
+    dbms_output.put_line(burti);
+
+    burti := burts1 || burts2;
+    dbms_output.put_line(burti);
+    insert into numinterv values (num_interv_id.nextval, burti ,0, strukt);
+ 
+  end next_nr;
+begin
+  burts2ASCII := 0;
+end;
+/
+
+exec next_numb_interv.next_nr(3);
