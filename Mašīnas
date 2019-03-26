@@ -1,0 +1,31 @@
+create table masinas( 
+shasijas_nr varchar(17) not null constraint sas_nr_pk primary key,  
+gads number(4),
+piln_masa number(6),
+pash_masa number(6),
+model_id number(4),
+krasa_id varchar2(5),
+strukt_id number(5,0),
+apl_nr varchar2(9),
+mash_nr varchar2(5),
+ipasn_id number(5),
+piezimes varchar2(500));
+
+
+ALTER TABLE masinas ADD
+CONSTRAINT mas_maod_fk FOREIGN KEY (model_id) REFERENCES modeli (mod_id);
+
+ALTER TABLE masinas ADD
+CONSTRAINT mas_krasa_fk FOREIGN KEY (krasa_id) REFERENCES krasas (kods);
+
+ALTER TABLE masinas ADD
+CONSTRAINT mas_strukt_fk FOREIGN KEY (strukt_id) REFERENCES strukturv (id);
+
+ALTER TABLE masinas ADD
+CONSTRAINT mas_apl_fk FOREIGN KEY (apl_nr) REFERENCES apliecibas (numurs);
+
+ALTER TABLE masinas ADD
+CONSTRAINT mas_nr_fk FOREIGN KEY (mash_nr) REFERENCES numuri (numurs);
+
+ALTER TABLE masinas ADD
+CONSTRAINT mas_ipasn_fk FOREIGN KEY (ipasn_id) REFERENCES ipasnieki (id);
