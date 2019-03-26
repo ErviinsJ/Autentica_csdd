@@ -1,29 +1,21 @@
+--krāsu tabula
 create table krasas (   
-ID number(4,0) not null constraint color_pk primary key,   
-kods varchar2(5),   
+kods varchar2(5) not null constraint color_pk primary key,   
 nosaukums varchar2(15));
  
 alter table krasas
 add constraint code_con CHECK (kods not like '%[^0-9A-Z]%');
  
-CREATE SEQUENCE seq_color
-MINVALUE 1
-START WITH 1
-INCREMENT BY 1
-CACHE 10;
 
-ALTER TABLE krasas
-ADD UNIQUE (kods); 
+insert into krasas values ('WHITE','balta');
+insert into krasas values ('BLACK','melna');
  
+insert into krasas values ('RED01','sarkana');
+insert into krasas values ('VIOLT','violeta');
+insert into krasas values ('BLUE1','zila');
+insert into krasas values ('GREEN','zaļa');
+insert into krasas values ('YELOW','dzeltena');
+insert into krasas values ('ORANG','oranža');
+insert into krasas values ('GREY1','pelēka');
+
 select * from krasas;
-
-insert into krasas values (seq_color.nextval,'WHITE','balta');
-insert into krasas values (seq_color.nextval,'BLACK','melna');
- 
-insert into krasas values (seq_color.nextval,'RED01','sarkana');
-insert into krasas values (seq_color.nextval,'VIOLT','violeta');
-insert into krasas values (seq_color.nextval,'BLUE1','zila');
-insert into krasas values (seq_color.nextval,'GREEN','zaļa');
-insert into krasas values (seq_color.nextval,'YELOW','dzeltena');
-insert into krasas values (seq_color.nextval,'ORANG','oranža');
-insert into krasas values (seq_color.nextval,'GREY1','pelēka');
