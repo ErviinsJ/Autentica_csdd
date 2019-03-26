@@ -1,59 +1,16 @@
-create table numuri (  
-numurs varchar(7) not null constraint nr_pk primary key,  
+--Reg Apliecību numuri
+--drop table apliecibas CASCADE CONSTRAINTS;
+create table apliecibas (  
+numurs varchar(9) not null constraint apl_pk primary key,  
 statuss varchar2(20),
-spec number(1) DEFAULT 0);
+spec number(1) DEFAULT 0,
+strukt_id number(5,0) not null);
 
+ALTER TABLE apliecibas ADD
+CONSTRAINT napl_strukt_fk FOREIGN KEY (strukt_id) REFERENCES strukturv (id);
 
-insert into numuri values ('AA1212', 'b', 0);
-insert into numuri values ('AB1211', 'b', 0);
-insert into numuri values ('AA1132', 'b', 0);
-insert into numuri values ('KASPARS', 'b', 1);
-insert into numuri values ('AA1213', 'b', 0);
-insert into numuri values ('AA2212', 'b', 0);
-insert into numuri values ('AA1111', 'b', 0);
-
-select * from numuri;
-
-create or replace package next_numb
-is
-  procedure auto_nr(strukt number);
-end;
-/
-
-create or replace package body next_numb
-is
--- Numura pirmais un otrais burts char un ascii veidā
-  burti varchar2(7);
-  burts2 varchar2(1);
-  burts1 varchar2(1);
-  cipari number(4);
-  procedure auto_nr(strukt number)
-  is
-  begin
-  
-    select numurs into burti
-    from ( select n.*, max(numurs) over () as max_id
-               from numuri n
-               where n.spec = 0
-            )
-    where numurs = max_id;
-    
-    select SUBSTR(burti, 2, 1) into burts2 from dual;
-    select SUBSTR(burti, 1, 1) into burts1 from dual;
-    select TO_NUMBER(SUBSTR(burti, 3, 4),'9999') into cipari from dual;
-    
-    cipari := cipari +1;
-    
-    dbms_output.put_line(burti);
-
-    burti := burts1 || burts2;
-    dbms_output.put_line(burti||cipari);
-    --insert into numinterv values (num_interv_id.nextval, burti ,0, strukt);
- 
-  end auto_nr;
-begin
-  NULL;
-end;
-/
-
-exec next_numb.auto_nr(2);
+insert into apliecibas values ('BA1212567', 'b', 0, 1);
+insert into apliecibas values ('BB1231211', 'b', 0, 2);
+insert into apliecibas values ('BC1537211', 'b', 0, 3);
+insert into apliecibas values ('BA9212567', 'b', 0, 1);
+insert into apliecibas values ('BB2231211', 'b', 0, 2);
