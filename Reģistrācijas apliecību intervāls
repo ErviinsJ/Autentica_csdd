@@ -1,3 +1,5 @@
+
+--Reģistrācijas apliecību numuru intevali
 create table aplinterv(
 id number(5,0) not null constraint apl_interv_pk primary key,
 aplBurti varchar(2) not null,
@@ -15,3 +17,5 @@ CACHE 10;
 
 insert into aplinterv values (apl_interv_id.nextval, 'BA', 0, 1);
 insert into aplinterv values (apl_interv_id.nextval, 'BB', 0, 2);
+insert into aplinterv values (apl_interv_id.nextval, 'BC', 0, 3);
+
