@@ -1,3 +1,4 @@
+--drop table masinas;
 create table masinas( 
 shasijas_nr varchar(17) not null constraint sas_nr_pk primary key,  
 gads number(4),
@@ -7,7 +8,7 @@ model_id number(4),
 krasa_id varchar2(5),
 strukt_id number(5,0),
 apl_nr varchar2(9),
-mash_nr varchar2(5),
+mash_nr varchar2(6),
 ipasn_id number(5),
 piezimes varchar2(500));
 
@@ -31,18 +32,134 @@ ALTER TABLE masinas ADD
 CONSTRAINT mas_ipasn_fk FOREIGN KEY (ipasn_id) REFERENCES ipasnieki (id);
 
 
-
 insert into masinas values ('WAUZZZ8CZNA123456','2015',1766,1533,2,'RED01',1,'BA1212567','AA1132',2,'');
 
 select *
 from masinas;
 
 
+
+create or replace package add_car
+is
+
+  procedure new_car(vin varchar2, gads number, pilnmas number, pasmas number, 
+                    in_marka varchar2, in_modelis varchar2, krasa varchar2,
+                    strukt number, ipasnid  number);
+end;
+/
+
+create or replace package body add_car
+is
+    burti varchar2(7);
+    burts2 varchar2(1);
+    burts1 varchar2(1);
+    cipari number(4);
+    aburti varchar2(9);
+    aburts2 varchar2(1);
+    aburts1 varchar2(1);
+    acipari number(7);
+    model_id number(5);
+    mas_nr varchar2(6);
+    mas_apl varchar2(9);
+    kluda number(1);
+    procedure new_car(vin varchar2, gads number, pilnmas number, pasmas number, 
+                    in_marka varchar2, in_modelis varchar2, krasa varchar2,
+                    strukt number, ipasnid  number)
+  is
+  begin
+    kluda := 0;
+    
+    if gads < 1900 then
+        kluda :=1;
+        dbms_output.put_line('parāk vecs gads');
+        RETURN;
+    end if;
+    if gads > 2019 then
+        kluda :=1;
+        dbms_output.put_line('pārāk jauns gads');
+        RETURN;
+    end if;
+    if pasmas > pilnmas then
+        kluda :=1;
+        dbms_output.put_line('pasmasas kļūda');
+        RETURN;
+    end if;
+    
+    dbms_output.put_line(vin);
+      
+    select mod_id into model_id 
+    from mark_modeli 
+    where modelis = in_modelis
+    and marka = in_marka;
+    
+    dbms_output.put_line(model_id);
+    
+    --procedūra numuri
+    select numurs into burti
+    from ( select n.*, max(numurs) over () as max_id
+               from numuri n
+               where n.spec = 0
+               and strukt_id = strukt
+            )
+    where numurs = max_id;
+    
+    select SUBSTR(burti, 2, 1) into burts2 from dual;
+    select SUBSTR(burti, 1, 1) into burts1 from dual;
+    select TO_NUMBER(SUBSTR(burti, 3, 4),'9999') into cipari from dual;
+    
+    cipari := cipari +1;
+    
+    dbms_output.put_line(burti);
+
+    burti := burts1 || burts2;
+    mas_nr := burti || cipari;
+    dbms_output.put_line(mas_nr);
+    insert into numuri values (mas_nr, 'a' ,0, strukt);
+    
+    --procedūra apliecibas
+    select numurs into aburti
+    from ( select a.*, max(numurs) over () as max_id
+               from apliecibas a
+               where strukt_id = strukt
+            )
+    where numurs = max_id;
+    
+    select SUBSTR(aburti, 2, 1) into aburts2 from dual;
+    select SUBSTR(aburti, 1, 1) into aburts1 from dual;
+    select TO_NUMBER(SUBSTR(aburti, 3, 7),'9999999') into acipari from dual;
+    
+    acipari := acipari +1;
+    
+    dbms_output.put_line(burti);
+
+    aburti := aburts1 || aburts2;
+    mas_apl := aburti || acipari;
+    dbms_output.put_line(mas_apl);
+    insert into apliecibas values (mas_apl, 'a' ,0, strukt);
+    
+    insert into masinas values (vin,gads,pilnmas,pasmas,model_id,krasa,strukt,mas_apl,mas_nr,ipasnid,'');
+  end new_car;
+begin
+  NULL;
+end;
+/
+
+exec add_car.new_car('WAUZZZ6CZMA4447', 2010, 1669, 1420, 'AUDI', 'A6', 'GREEN', 2, 1);
+
+exec add_car.new_car('WAYHHZ6CZMA3367', 2017, 1839, 1600, 'Mercedes', 'S500', 'GREEN', 2, 1);
+
+    select mod_id
+    from mark_modeli
+    where modelis = 'A4';
+
+
+
 create or replace view masinas_view
 as 
 select m.shasijas_nr as "Šasijas nr", m.gads, m.piln_masa as "Pilna masa",
     m.pash_masa as Pašmasa, mo.modelis, ma.marka, k.nosaukums as krāsa,
-    s.nosauk as struktūrvienība, i.vards as "īpasnieka vārds",
+    s.nosauk as struktūrvienība, m.mash_nr as numurs, m.apl_nr as "Apliecības nr",
+    i.vards as "īpasnieka vārds",
     i.uzvards as "īpašnieka uzvārds"
 from masinas m 
 left join modeli mo 
