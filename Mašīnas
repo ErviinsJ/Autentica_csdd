@@ -29,3 +29,33 @@ CONSTRAINT mas_nr_fk FOREIGN KEY (mash_nr) REFERENCES numuri (numurs);
 
 ALTER TABLE masinas ADD
 CONSTRAINT mas_ipasn_fk FOREIGN KEY (ipasn_id) REFERENCES ipasnieki (id);
+
+
+
+insert into masinas values ('WAUZZZ8CZNA123456','2015',1766,1533,2,'RED01',1,'BA1212567','AA1132',2,'');
+
+select *
+from masinas;
+
+
+create or replace view masinas_view
+as 
+select m.shasijas_nr as "Šasijas nr", m.gads, m.piln_masa as "Pilna masa",
+    m.pash_masa as Pašmasa, mo.modelis, ma.marka, k.nosaukums as krāsa,
+    s.nosauk as struktūrvienība, i.vards as "īpasnieka vārds",
+    i.uzvards as "īpašnieka uzvārds"
+from masinas m 
+left join modeli mo 
+on m.model_id = mo.mod_ID
+left join markas ma
+on ma.id = mo.marka_id
+left join krasas k
+on m.krasa_id = k.kods
+left join strukturv s
+on m.strukt_id = s.id
+left join ipasnieki i
+on m.ipasn_id = i.id;
+
+
+select * from masinas_view  
+where "Šasijas nr" is not null;
