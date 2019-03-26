@@ -1,0 +1,7 @@
+create table apliecibas (  
+numurs varchar(9) not null constraint apl_pk primary key,  
+statuss varchar2(20),
+spec number(1) DEFAULT 0);
+
+insert into apliecibas values ('BA1212567', 'b', 0);
+insert into apliecibas values ('BB1231211', 'b', 0);
