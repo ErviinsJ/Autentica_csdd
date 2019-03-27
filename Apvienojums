@@ -105,78 +105,6 @@ insert into ipasnieki values (seq_ipasn.nextval,'020591-34265','Ance','Kalniņa'
 
 
 
-create or replace package add_ipasn
-is
-  procedure new_ipasn(pers_k1 varchar2, pers_k2 varchar2, vards varchar2,
-                        uzvards varchar);
-end;
-/
-
-create or replace package body add_ipasn
-is
-    kluda number(1);
-    
-  procedure new_ipasn(pers_k1 varchar2, pers_k2 varchar2, vards varchar2, 
-                        uzvards varchar)
-  is
-  begin
-    
-    kluda := 0;
-  
-    if (length(pers_k1) <> 6) then
-        dbms_output.put_line('kļūda pers kodā 1');
-        kluda := 1;
-    elsif (length(pers_k2) <> 5) then
-        dbms_output.put_line('kļūda pers kodā 2');
-        kluda := 1;
-    else
-         dbms_output.put_line(pers_k1 || '-' || pers_k2);
-    end if;
-    dbms_output.put_line(length(pers_k2));
-    
-    if REGEXP_LIKE(pers_k1, '^[[:digit:]]+$') then
-        dbms_output.put_line('nav kļūda pers kodā 1');
-    else
-         dbms_output.put_line('ir kļūda pers kodā 1');
-         kluda := 1;
-    end if;
-    
-    if REGEXP_LIKE(pers_k2, '^[[:digit:]]+$') then
-        dbms_output.put_line('nav kļūda pers kodā 2');
-    else
-         dbms_output.put_line('ir kļūda pers kodā 2');
-         kluda := 1;
-    end if;
-    
-    if REGEXP_LIKE(vards, '[[:alpha:]]+$') then
-        dbms_output.put_line('nav kļūda vardā');
-    else
-         dbms_output.put_line('ir kļūda vardā');
-         kluda := 1;
-    end if;
-    if REGEXP_LIKE(uzvards, '[[:alpha:]]+$') then
-        dbms_output.put_line('nav kļūda vardā');
-    else
-         dbms_output.put_line('ir kļūda vardā');
-         kluda := 1;
-    end if;
-    
-    if kluda = 1 then
-        dbms_output.put_line('ipasnieka pievienosana neveiksmīga');
-    else
-    insert into ipasnieki values (seq_ipasn.nextval,pers_k1 || '-' || pers_k2,
-                                   vards,uzvards);
-        dbms_output.put_line('ipasnieka pievienosana veiksmīga');
-    end if;
-
- 
-  end new_ipasn;
-begin
-  NULL;
-end;
-/
-
-exec add_ipasn.new_ipasn('110999','15325','Agnese','kļaviņa');
 
 select * from ipasnieki;
 
@@ -200,45 +128,42 @@ select * from strukturv;
 
 
 --Numuru intervālu tabua
+--drop table numinterv;
 create table numinterv(
-id number(5,0) not null constraint num_interv_pk primary key,
-nrBurti varchar(2) not null,
+nrBurti varchar(2) not null constraint num_interv_pk primary key,
 nogenMNr number(1) DEFAULT 0,
 strukt_id number(5,0) not null);
 
 ALTER TABLE numinterv ADD
 CONSTRAINT num_strukt_fk FOREIGN KEY (strukt_id) REFERENCES strukturv (id);
 
---drop sequence num_interv_id;
-CREATE SEQUENCE num_interv_id
-MINVALUE 1
-START WITH 1
-INCREMENT BY 1
-CACHE 10;
 
-insert into numinterv values (num_interv_id.nextval, 'AA', 0, 1);
-insert into numinterv values (num_interv_id.nextval, 'AB', 0, 2);
-insert into numinterv values (num_interv_id.nextval, 'AX', 0, 1);
+insert into numinterv values ('AA', 0, 1);
+insert into numinterv values ('AB', 0, 2);
 --insert into numinterv values (num_interv_id.nextval, 'AP', 0, 2);
 
 
 select * 
 from numinterv
-ORDER BY ID;
+ORDER BY strukt_id;
 
+create or replace view masinas_view
+as 
 select s.nosauk as Strukturvieniba,
     i.nrBurti as Intervals 
 from numinterv i
 left join strukturv s on s.id = i.strukt_id;
 
 
-create or replace package next_numb_interv
+--------------------------------------------------------------------------------
+create or replace package numuri_pack
 is
-  procedure next_nr(strukt number);
+    procedure generet_nr(in_burti varchar2);
+    procedure next_nr_interv(strukt number);
 end;
 /
 
-create or replace package body next_numb_interv
+create or replace package body numuri_pack
 is
 -- Numura pirmais un otrais burts char un ascii veidā
   burti varchar2(2);
@@ -246,15 +171,17 @@ is
   burts1 varchar2(1);
   burts2ASCII number(3);
   burts1ASCII number(3);
-  procedure next_nr(strukt number)
+  temp number(1);
+  strukturv number(5);
+  procedure next_nr_interv(strukt number)
   is
   begin
   
     select nrburti into burti
-    from ( select n.*, max(id) over () as max_id
+    from ( select n.*, max(nrBurti) over () as max_id
                from numinterv n
                     )
-    where id = max_id;
+    where nrBurti = max_id;
     
     select SUBSTR(burti, 2, 1) into burts2 from dual;
     select SUBSTR(burti, 1, 1) into burts1 from dual;
@@ -296,39 +223,50 @@ is
 
     burti := burts1 || burts2;
     dbms_output.put_line(burti);
-    insert into numinterv values (num_interv_id.nextval, burti ,0, strukt);
+    insert into numinterv values (burti ,0, strukt);
+    
+    for i in 9990..9999 loop
+    insert into numuri values (burti||i, 'b', 0, strukt);
+    end loop;
+    
  
-  end next_nr;
+  end next_nr_interv;
+  ------------------------------------------------------------------------------
+    procedure generet_nr(in_burti varchar2)
+    is
+    begin 
+        
+        temp := 0;
+        select count(*) into  temp
+        from   numinterv
+        where  nrBurti = in_burti;
+        
+        
+        
+        if temp = 1 then
+            
+            select strukt_id into strukturv
+            from numinterv
+            where nrBurti = in_burti;
+        
+            for i in 9990..9999 loop
+                insert into numuri values (in_burti||i, 'b', 0, strukturv);
+                
+            end loop;
+        else 
+            dbms_output.put_line(in_burti||' burtu untervāls nav piešķirts stuktūrvienībai');
+        end if;
+        
+        NULL;
+    end generet_nr;
 begin
   burts2ASCII := 0;
 end;
 /
 
-exec next_numb_interv.next_nr(2);
+exec numuri_pack.generet_nr('AG');
 
-
-
-
-
---Reģistrācijas apliecību numuru intevali
-create table aplinterv(
-id number(5,0) not null constraint apl_interv_pk primary key,
-aplBurti varchar(2) not null,
-nogen_apl number(1) DEFAULT 0,
-strukt_id number(5,0) not null);
-
-ALTER TABLE aplinterv ADD
-CONSTRAINT apl_strukt_fk FOREIGN KEY (strukt_id) REFERENCES strukturv (id);
-
-CREATE SEQUENCE apl_interv_id
-MINVALUE 1
-START WITH 1
-INCREMENT BY 1
-CACHE 10;
-
-insert into aplinterv values (apl_interv_id.nextval, 'BA', 0, 1);
-insert into aplinterv values (apl_interv_id.nextval, 'BB', 0, 2);
-insert into aplinterv values (apl_interv_id.nextval, 'BC', 0, 3);
+exec numuri_pack.next_nr_interv(2);
 
 
 --Mašīnu numuri
@@ -342,7 +280,7 @@ strukt_id number(5,0) not null);
 ALTER TABLE numuri ADD
 CONSTRAINT nr_strukt_fk FOREIGN KEY (strukt_id) REFERENCES strukturv (id);
 
-
+/*
 insert into numuri values ('AA1212', 'b', 0, 1);
 insert into numuri values ('AB1211', 'b', 0, 2);
 insert into numuri values ('AA1132', 'b', 0, 1);
@@ -350,54 +288,41 @@ insert into numuri values ('KASPARS', 'b', 1, 3);
 insert into numuri values ('AA1213', 'b', 0, 1);
 insert into numuri values ('AA2212', 'b', 0, 1);
 insert into numuri values ('AA1111', 'b', 0, 1);
+*/
 
 select * from numuri;
 
-/*
-create or replace package next_numb
-is
-  procedure auto_nr(strukt number, j_numurs out varchar2);
-end;
-/
 
-create or replace package body next_numb
-is
--- Numura pirmais un otrais burts char un ascii veidā
-  burti varchar2(7);
-  burts2 varchar2(1);
-  burts1 varchar2(1);
-  cipari number(4);
-  procedure auto_nr(strukt number, j_numurs out varchar2)
-  is
-  begin
-  
-    select numurs into burti
-    from ( select n.*, max(numurs) over () as max_id
-               from numuri n
-               where n.spec = 0
-            )
-    where numurs = max_id;
-    
-    select SUBSTR(burti, 2, 1) into burts2 from dual;
-    select SUBSTR(burti, 1, 1) into burts1 from dual;
-    select TO_NUMBER(SUBSTR(burti, 3, 4),'9999') into cipari from dual;
-    
-    cipari := cipari +1;
-    
-    dbms_output.put_line(burti);
 
-    burti := burts1 || burts2;
-    j_numurs := burti || cipari;
-    dbms_output.put_line(j_numurs);
-    insert into numuri values (burti||cipari, 'a' ,0, strukt);
-    
-  end auto_nr;
-begin
-  NULL;
-end;
-/
-exec next_numb.auto_nr(2);
-*/
+
+--Reģistrācijas apliecību numuru intevali
+--drop table aplinterv;
+create table aplinterv(
+aplBurti varchar(2) not null constraint apl_interv_pk primary key,
+nogen_apl number(1) DEFAULT 0,
+strukt_id number(5,0) not null);
+
+ALTER TABLE aplinterv ADD
+CONSTRAINT apl_strukt_fk FOREIGN KEY (strukt_id) REFERENCES strukturv (id);
+
+
+insert into aplinterv values ('AA', 0, 1);
+insert into aplinterv values ('AB', 0, 2);
+insert into aplinterv values ('AC', 0, 3);
+
+select * 
+from aplinterv
+ORDER BY strukt_id;
+
+create or replace view apl_interv_view
+as 
+select s.nosauk as Strukturvieniba,
+    i.aplBurti as Intervals 
+from aplinterv i
+left join strukturv s on s.id = i.strukt_id;
+
+select * from apl_interv_view;
+
 
 --Reg Apliecību numuri
 --drop table apliecibas CASCADE CONSTRAINTS;
@@ -415,6 +340,136 @@ insert into apliecibas values ('BB1231211', 'b', 0, 2);
 insert into apliecibas values ('BC1537211', 'b', 0, 3);
 insert into apliecibas values ('BA9212567', 'b', 0, 1);
 insert into apliecibas values ('BB2231211', 'b', 0, 2);
+
+select * from apliecibas;
+--------------------------------------------------------------------------------
+create or replace package apliecibas_pack
+is
+    procedure generet_apliec(in_burti varchar2);
+    procedure next_apl_interv(strukt number);
+end;
+/
+
+create or replace package body apliecibas_pack
+is
+-- Numura pirmais un otrais burts char un ascii veidā
+  burti varchar2(2);
+  burts2 varchar2(1);
+  burts1 varchar2(1);
+  burts2ASCII number(3);
+  burts1ASCII number(3);
+  temp number(1);
+  strukturv number(5);
+  procedure next_apl_interv(strukt number)
+  is
+  begin
+  
+    select aplBurti into burti
+    from ( select n.*, max(aplBurti) over () as max_id
+               from aplinterv n
+                    )
+    where aplBurti = max_id;
+    
+    select SUBSTR(burti, 2, 1) into burts2 from dual;
+    select SUBSTR(burti, 1, 1) into burts1 from dual;
+    
+    burts2ASCII := ascii(burts2);
+    
+
+-- ja numura otrais burts ir Z maina pirmo burtu uz nākamo    
+    if burts2ASCII = 90 then
+    burts1ascii := ascii(burts1);
+    burts1ASCII := burts1ASCII + 1;
+    burts1 := chr(burts1ascii);
+    burts2 := 'A';
+    else
+    burts2ASCII := burts2ASCII + 1;
+    burts2 := chr(burts2ascii);
+    end if;
+
+
+-- Pārbauda vai numuram netiek piešķirts angļu alfabēta burts
+    CASE
+        WHEN burts1 = 'Q' THEN 
+            burts1 :='R';
+        WHEN burts1 = 'W' THEN 
+            burts1 := 'Z';
+        WHEN burts1 = 'X' THEN 
+            burts1 := 'Z';
+        WHEN burts2 = 'Q' THEN 
+            burts2 :='R';
+        WHEN burts2 = 'W' THEN 
+            burts2 := 'Z';
+        WHEN burts2 = 'X' THEN 
+            burts2 := 'Z';
+        ELSE NULL;
+    END case;
+
+    
+    dbms_output.put_line(burti);
+
+    burti := burts1 || burts2;
+    dbms_output.put_line(burti);
+    insert into aplinterv values (burti ,0, strukt);
+    
+    for i in 9999990..9999999 loop
+    insert into apliecibas values (burti||i, 'b', 0, strukt);
+    end loop;
+    
+    UPDATE aplinterv
+    SET nogen_apl = 1
+    WHERE aplBurti = burti;
+    
+ 
+  end next_apl_interv;
+  ------------------------------------------------------------------------------
+    procedure generet_apliec(in_burti varchar2)
+    is
+    begin 
+        
+        temp := 0;
+        select count(*) into  temp
+        from   aplinterv
+        where  aplBurti = in_burti;
+        
+        
+        
+        if temp = 1 then
+            
+            select strukt_id into strukturv
+            from aplinterv
+            where aplBurti = in_burti;
+        
+            for i in 9999990..9999999 loop
+                insert into apliecibas values (in_burti||i, 'b', 0, strukturv);
+                
+            end loop;
+            
+            UPDATE aplinterv
+            SET nogen_apl = 1
+            WHERE aplBurti = in_burti;
+        else 
+            dbms_output.put_line(in_burti||' burtu untervāls nav piešķirts stuktūrvienībai');
+        end if;
+        
+        NULL;
+    end generet_apliec;
+begin
+  burts2ASCII := 0;
+end;
+/
+
+            UPDATE aplinterv
+            SET nogen_apl = 1
+            WHERE aplBurti = 'AC';
+
+
+exec apliecibas_pack.generet_apliec('AA');
+
+exec apliecibas_pack.next_apl_interv(2);
+
+
+
 
 
 --drop table masinas;
@@ -451,23 +506,26 @@ ALTER TABLE masinas ADD
 CONSTRAINT mas_ipasn_fk FOREIGN KEY (ipasn_id) REFERENCES ipasnieki (id);
 
 
-insert into masinas values ('WAUZZZ8CZNA123456','2015',1766,1533,2,'RED01',1,'BA1212567','AA1132',2,'');
+insert into masinas values ('WAUZZZ8CZNA123456','2015',1766,1533,2,'RED01',1,'BA1212567','AD9990',2,'');
 
 select *
 from masinas;
 
 
 
-create or replace package add_car
+create or replace package usr_input
 is
 
-  procedure new_car(vin varchar2, gads number, pilnmas number, pasmas number, 
+    procedure new_car(vin varchar2, gads number, pilnmas number, pasmas number, 
                     in_marka varchar2, in_modelis varchar2, krasa varchar2,
-                    strukt number, ipasnid  number);
+                    strukt number, ipasnid  number, specal_nr varchar2);
+                    
+    procedure new_ipasn(pers_k1 varchar2, pers_k2 varchar2, vards varchar2,
+                        uzvards varchar);
 end;
 /
 
-create or replace package body add_car
+create or replace package body usr_input
 is
     burti varchar2(7);
     burts2 varchar2(1);
@@ -483,7 +541,7 @@ is
     kluda number(1);
     procedure new_car(vin varchar2, gads number, pilnmas number, pasmas number, 
                     in_marka varchar2, in_modelis varchar2, krasa varchar2,
-                    strukt number, ipasnid  number)
+                    strukt number, ipasnid  number, specal_nr varchar2)
   is
   begin
     kluda := 0;
@@ -513,27 +571,20 @@ is
     
     dbms_output.put_line(model_id);
     
+    
     --procedūra numuri
-    select numurs into burti
-    from ( select n.*, max(numurs) over () as max_id
+    select numurs into mas_nr
+    from ( select n.*, min(numurs) over () as min_id
                from numuri n
-               where n.spec = 0
-               and strukt_id = strukt
+               where strukt_id = strukt
+               and statuss = 'b'
             )
-    where numurs = max_id;
+    where numurs = min_id;
     
-    select SUBSTR(burti, 2, 1) into burts2 from dual;
-    select SUBSTR(burti, 1, 1) into burts1 from dual;
-    select TO_NUMBER(SUBSTR(burti, 3, 4),'9999') into cipari from dual;
     
-    cipari := cipari +1;
-    
-    dbms_output.put_line(burti);
-
-    burti := burts1 || burts2;
-    mas_nr := burti || cipari;
-    dbms_output.put_line(mas_nr);
-    insert into numuri values (mas_nr, 'a' ,0, strukt);
+    UPDATE numuri
+    SET statuss = 'a'
+    WHERE numurs = mas_nr;
     
     --procedūra apliecibas
     select numurs into aburti
@@ -557,15 +608,83 @@ is
     insert into apliecibas values (mas_apl, 'a' ,0, strukt);
     
     insert into masinas values (vin,gads,pilnmas,pasmas,model_id,krasa,strukt,mas_apl,mas_nr,ipasnid,'');
-  end new_car;
+    end new_car;
+    
+    --Īpašnieka pievienošana 
+    ----------------------------------------------------------------------------
+    procedure new_ipasn(pers_k1 varchar2, pers_k2 varchar2, vards varchar2, 
+                        uzvards varchar)
+    is
+    begin
+    
+    kluda := 0;
+  
+        if (length(pers_k1) <> 6) then
+            dbms_output.put_line('kļūda pers kodā 1');
+            kluda := 1;
+        elsif (length(pers_k2) <> 5) then
+            dbms_output.put_line('kļūda pers kodā 2');
+            kluda := 1;
+        else
+             dbms_output.put_line(pers_k1 || '-' || pers_k2);
+        end if;
+        dbms_output.put_line(length(pers_k2));
+        
+        if REGEXP_LIKE(pers_k1, '^[[:digit:]]+$') then
+            dbms_output.put_line('nav kļūda pers kodā 1');
+        else
+             dbms_output.put_line('ir kļūda pers kodā 1');
+             kluda := 1;
+        end if;
+        
+        if REGEXP_LIKE(pers_k2, '^[[:digit:]]+$') then
+            dbms_output.put_line('nav kļūda pers kodā 2');
+        else
+             dbms_output.put_line('ir kļūda pers kodā 2');
+             kluda := 1;
+        end if;
+        
+        if REGEXP_LIKE(vards, '[[:alpha:]]+$') then
+            dbms_output.put_line('nav kļūda vardā');
+        else
+             dbms_output.put_line('ir kļūda vardā');
+             kluda := 1;
+        end if;
+        if REGEXP_LIKE(uzvards, '[[:alpha:]]+$') then
+            dbms_output.put_line('nav kļūda vardā');
+        else
+             dbms_output.put_line('ir kļūda vardā');
+             kluda := 1;
+        end if;
+        
+        if kluda = 1 then
+            dbms_output.put_line('ipasnieka pievienosana neveiksmīga');
+        else
+        insert into ipasnieki values (seq_ipasn.nextval,pers_k1 || '-' || pers_k2,
+                                       vards,uzvards);
+            dbms_output.put_line('ipasnieka pievienosana veiksmīga');
+        end if;
+    
+     
+    end new_ipasn;
+  
 begin
   NULL;
 end;
 /
 
-exec add_car.new_car('WAUZZZ6CZMA4447', 2010, 1669, 1420, 'AUDI', 'A6', 'GREEN', 2, 1);
 
-exec add_car.new_car('WAYHHZ6CZMA3367', 2017, 1839, 1600, 'Mercedes', 'S500', 'GREEN', 2, 1);
+
+
+
+exec usr_input.new_ipasn('110999','15325','Agnese','kļaviņa');
+
+
+
+
+exec usr_input.new_car('WAUZZZ6CZ4MA7247', 2010, 1669, 1420, 'AUDI', 'A4', 'GREEN', 2, 1, 'sdsf');
+
+exec usr_input.new_car('WAYHHZ6CZMA3367', 2017, 1839, 1600, 'Mercedes', 'S500', 'GREEN', 2, 1, 'asd');
 
     select mod_id
     from mark_modeli
