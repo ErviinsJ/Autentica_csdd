@@ -1,0 +1,49 @@
+--Apskatīt visus reģistrētos modeļus
+select * from mark_modeli;
+
+-- Pievienot jaunu numuru intervālu (strultūrvienība, kurai pievieno)
+exec numuri_pack.next_nr_interv(4);
+
+-- Ģenerēt numurus intervālā(intevāla burti)
+exec numuri_pack.generet_nr('AA');
+
+-- Dzēst intervālu
+exec numuri_pack.delete_interv('AB');
+
+--Apskatīt numuru intervālus un struktūrvienības, kurām pieder tie
+select * from strukt_burti_view;
+
+-- Apskatīt visus numurus
+select * from numuri;
+
+-- Pievienot jaunu reg apliecību intervālu (strultūrvienība, kurai pievieno)
+exec apliecibas_pack.next_apl_interv(2);
+
+-- Ģenerēt reg apliecību numurus intervālā(intevāla burti)
+exec apliecibas_pack.generet_apliec('AA');
+
+-- Dzēst intervālu
+exec apliecibas_pack.delete_interv('AA');
+
+--Apskatīt apliecību intervālus un struktūrvienības, kurām pieder tie
+select * from apl_interv_view;
+
+-- Apskatīt visus reg apliecību numurus
+select * from apliecibas;
+
+
+-- Pievienot jaunu īpašnieku (pers koda 1. daļa, pers. koda 2. daļa, vārds, uzvārds)
+exec usr_input.new_ipasn('110999','15325','Agnese','kļaviņa');
+
+-- Pievienot jaunu mašīnu (vin, gads, pilna masa, pašmasa, ražotājs, marka, krāsas kods, struktūrvienības id,
+--   īpašnieka id, speciāls nr(ja atstāj tukšu mašīnai piešķir automātiskinr, ja ievada īpāsu numuru, tiek piešķirts tas) )
+exec usr_input.new_car('WAUZZZ6CZ4MA7247', 1997, 1669, 1420, 'AUDI', 'A4', 'GREEN', 1, 1, '');
+exec usr_input.new_car('WAYHHZ6CZMA3367', 2017, 1839, 1600, 'Mercedes', 'S500', 'GREEN', 2, 2, 'KARLIS');
+
+-- dzēš mašīnu (vin)
+exec usr_input.del_car('WAYHHZ6CZMA3367');
+
+-- Apskatīt visas reģistrētās mašīnas
+select * from masinas_view  
+where "Šasijas nr" is not null;
+
