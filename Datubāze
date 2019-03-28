@@ -25,11 +25,7 @@ ID number(4,0) not null constraint marka_pk primary key,
 marka varchar2(20) unique);
 
 alter table markas
-add constr
-
-
-
-aint marka_con CHECK (marka not like '%[^0-9A-Z]%');
+add constraint marka_con CHECK (marka not like '%[^0-9A-Z]%');
 
 CREATE SEQUENCE seq_marka
 MINVALUE 1
@@ -134,7 +130,7 @@ create or replace view strukt_burti_view
 as  
 select i.nrburti, i.nogenMNr, s.nosauk 
 from numinterv i 
-left join strukturv s on s.id = i.strukt_id
+left join strukturv s on s.id = i.strukt_id;
 
 
 --Mašīnu numuri
