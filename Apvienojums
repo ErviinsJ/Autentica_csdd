@@ -123,6 +123,7 @@ insert into strukturv values(seq_strukt_id.nextval, 'Rīga CSDD');
 insert into strukturv values(seq_strukt_id.nextval, 'Jelgava CSDD');
 insert into strukturv values(seq_strukt_id.nextval, 'Valmiera CSDD');
 insert into strukturv values(seq_strukt_id.nextval, 'Tukums CSDD');
+insert into strukturv values(seq_strukt_id.nextval, 'Talsi CSDD');
 
 select * from strukturv;
 
@@ -140,6 +141,7 @@ CONSTRAINT num_strukt_fk FOREIGN KEY (strukt_id) REFERENCES strukturv (id);
 
 insert into numinterv values ('AA', 0, 1);
 insert into numinterv values ('AB', 0, 2);
+insert into numinterv values ('AC', 0, 3);
 --insert into numinterv values (num_interv_id.nextval, 'AP', 0, 2);
 
 
@@ -153,6 +155,32 @@ select i.nrburti, i.nogenMNr, s.nosauk
 from numinterv i 
 left join strukturv s on s.id = i.strukt_id
 
+
+--Mašīnu numuri
+--drop table numuri CASCADE CONSTRAINTS;
+create table numuri (  
+numurs varchar(7) not null constraint nr_pk primary key,  
+statuss varchar2(20),
+spec number(1) DEFAULT 0,
+strukt_id number(5,0) not null);
+
+ALTER TABLE numuri ADD
+CONSTRAINT nr_strukt_fk FOREIGN KEY (strukt_id) REFERENCES strukturv (id);
+
+/*
+insert into numuri values ('AA1212', 'b', 0, 1);
+insert into numuri values ('AB1211', 'b', 0, 2);
+insert into numuri values ('AA1132', 'b', 0, 1);
+insert into numuri values ('KASPARS', 'b', 1, 3);
+insert into numuri values ('AA1213', 'b', 0, 1);
+insert into numuri values ('AA2212', 'b', 0, 1);
+insert into numuri values ('AA1111', 'b', 0, 1);
+*/
+
+select * from numuri;
+
+
+
 --------------------------------------------------------------------------------
 create or replace package numuri_pack 
 is 
@@ -160,6 +188,7 @@ is
     procedure next_nr_interv(strukt number); 
     procedure delete_interv(in_burti varchar); 
 end; 
+/
 
 create or replace package body numuri_pack 
 is 
@@ -169,7 +198,7 @@ is
   burts1 varchar2(1); 
   burts2ASCII number(3); 
   burts1ASCII number(3); 
-  temp number(1); 
+  temp number(3); 
   strukturv number(5); 
   procedure next_nr_interv(strukt number) 
   is 
@@ -265,15 +294,24 @@ is
     procedure delete_interv(in_burti varchar) 
     is 
     begin 
-         
+        temp := 99;
+        
         select count(*) into temp 
         from numuri 
-        WHERE numurs LIKE in_burti||'%'; 
+        WHERE numurs LIKE in_burti||'%'
+        and statuss = 'a'; 
      
     dbms_output.put_line(temp); 
- 
-            --DELETE FROM numinterv 
-            --WHERE nrBurti = in_burti; 
+    
+    if temp = 0 then
+        DELETE FROM numinterv 
+        WHERE nrBurti = in_burti;
+        
+        delete from numuri
+        where numurs LIKE in_burti||'%';
+    else
+        dbms_output.put_line('Numuru intervāls tiek izmantots'); 
+    end if;
          
     end delete_interv; 
 begin 
@@ -281,35 +319,15 @@ begin
 end; 
 /
 
-exec numuri_pack.generet_nr('AG');
-
-exec numuri_pack.next_nr_interv(2);
 
 
---Mašīnu numuri
---drop table numuri CASCADE CONSTRAINTS;
-create table numuri (  
-numurs varchar(7) not null constraint nr_pk primary key,  
-statuss varchar2(20),
-spec number(1) DEFAULT 0,
-strukt_id number(5,0) not null);
 
-ALTER TABLE numuri ADD
-CONSTRAINT nr_strukt_fk FOREIGN KEY (strukt_id) REFERENCES strukturv (id);
+exec numuri_pack.delete_interv('AB');
+exec numuri_pack.generet_nr('AA');
 
-/*
-insert into numuri values ('AA1212', 'b', 0, 1);
-insert into numuri values ('AB1211', 'b', 0, 2);
-insert into numuri values ('AA1132', 'b', 0, 1);
-insert into numuri values ('KASPARS', 'b', 1, 3);
-insert into numuri values ('AA1213', 'b', 0, 1);
-insert into numuri values ('AA2212', 'b', 0, 1);
-insert into numuri values ('AA1111', 'b', 0, 1);
-*/
-
+exec numuri_pack.next_nr_interv(4);
+select * from strukt_burti_view;
 select * from numuri;
-
-
 
 
 --Reģistrācijas apliecību numuru intevali
@@ -337,7 +355,7 @@ select s.nosauk as "Struktūrvienība",
     i.aplBurti as "Intervāls", 
     i.nogen_apl as "Noģenerēts" 
 from aplinterv i 
-left join strukturv s on s.id = i.strukt_id
+left join strukturv s on s.id = i.strukt_id;
 
 select * from apl_interv_view;
 
@@ -347,18 +365,17 @@ select * from apl_interv_view;
 create table apliecibas (  
 numurs varchar(9) not null constraint apl_pk primary key,  
 statuss varchar2(20),
-spec number(1) DEFAULT 0,
 strukt_id number(5,0) not null);
 
 ALTER TABLE apliecibas ADD
 CONSTRAINT napl_strukt_fk FOREIGN KEY (strukt_id) REFERENCES strukturv (id);
 
 /*
-insert into apliecibas values ('BA1212567', 'b', 0, 1);
-insert into apliecibas values ('BB1231211', 'b', 0, 2);
-insert into apliecibas values ('BC1537211', 'b', 0, 3);
-insert into apliecibas values ('BA9212567', 'b', 0, 1);
-insert into apliecibas values ('BB2231211', 'b', 0, 2);
+insert into apliecibas values ('BA1212567', 'b', 1);
+insert into apliecibas values ('BB1231211', 'b', 2);
+insert into apliecibas values ('BC1537211', 'b', 3);
+insert into apliecibas values ('BA9212567', 'b', 1);
+insert into apliecibas values ('BB2231211', 'b', 2);
 */
 select * from apliecibas;
 --------------------------------------------------------------------------------
@@ -366,6 +383,7 @@ create or replace package apliecibas_pack
 is
     procedure generet_apliec(in_burti varchar2);
     procedure next_apl_interv(strukt number);
+    procedure delete_interv(in_burti varchar);
 end;
 /
 
@@ -377,7 +395,7 @@ is
   burts1 varchar2(1); 
   burts2ASCII number(3); 
   burts1ASCII number(3); 
-  temp number(1); 
+  temp number(3); 
   strukturv number(5); 
   procedure next_apl_interv(strukt number) 
   is 
@@ -432,7 +450,7 @@ is
     insert into aplinterv values (burti, 1, strukt); 
      
     for i in 9999990..9999999 loop 
-    insert into apliecibas values (burti||i, 'b', 0, strukt); 
+    insert into apliecibas values (burti||i, 'b', strukt); 
     end loop; 
      
      
@@ -457,7 +475,7 @@ is
             where aplBurti = in_burti; 
          
             for i in 9999990..9999999 loop 
-                insert into apliecibas values (in_burti||i, 'b', 0, strukturv); 
+                insert into apliecibas values (in_burti||i, 'b', strukturv); 
                  
             end loop; 
              
@@ -470,21 +488,43 @@ is
          
         NULL; 
     end generet_apliec; 
+    ----------------------------------------------------------------------------
+    procedure delete_interv(in_burti varchar) 
+    is 
+    begin 
+        temp := 99;
+        
+        select count(*) into temp 
+        from apliecibas 
+        WHERE numurs LIKE in_burti||'%'
+        and statuss = 'a'; 
+     
+    dbms_output.put_line(temp); 
+    
+    if temp = 0 then
+        DELETE FROM aplinterv 
+        WHERE aplBurti = in_burti;
+        
+        delete from apliecibas
+        where numurs LIKE in_burti||'%';
+    else
+        dbms_output.put_line('Numuru intervāls tiek izmantots'); 
+    end if;
+         
+    end delete_interv; 
 begin 
-  burts2ASCII := 0; 
+  NULL;
 end; 
 /
 
-            UPDATE aplinterv
-            SET nogen_apl = 1
-            WHERE aplBurti = 'AC';
 
+exec apliecibas_pack.delete_interv('AA');
 
 exec apliecibas_pack.generet_apliec('AA');
 
 exec apliecibas_pack.next_apl_interv(2);
 
-
+select * from apl_interv_view;
 
 
 
@@ -539,6 +579,7 @@ is
     procedure new_ipasn(pers_k1 varchar2, pers_k2 varchar2, vards varchar2, 
                         uzvards varchar); 
     procedure del_car(vin varchar); 
+    procedure del_carbrand(modelis varchar2, marka varchar2);
 end; 
 /
 
@@ -561,20 +602,16 @@ is
                     strukt number, ipasnid  number, specal_nr varchar2) 
   is 
   begin 
-    kluda := 0; 
      
     if gads < 1900 then 
-        kluda :=1; 
         dbms_output.put_line('parāk vecs gads'); 
         RETURN; 
     end if; 
     if gads > 2019 then 
-        kluda :=1; 
         dbms_output.put_line('pārāk jauns gads'); 
         RETURN; 
     end if; 
     if pasmas > pilnmas then 
-        kluda :=1; 
         dbms_output.put_line('pasmasas kļūda'); 
         RETURN; 
     end if; 
@@ -637,53 +674,49 @@ is
     is 
     begin 
      
-    kluda := 0; 
-   
         if (length(pers_k1) <> 6) then 
-            dbms_output.put_line('kļūda pers kodā 1'); 
-            kluda := 1; 
+            dbms_output.put_line('kļūda pers koda pirmajādaļā'); 
+            RETURN; 
         elsif (length(pers_k2) <> 5) then 
-            dbms_output.put_line('kļūda pers kodā 2'); 
-            kluda := 1; 
+            dbms_output.put_line('kļūda pers koda otrajā daļā'); 
+            RETURN; 
         else 
              dbms_output.put_line(pers_k1 || '-' || pers_k2); 
         end if; 
         dbms_output.put_line(length(pers_k2)); 
          
         if REGEXP_LIKE(pers_k1, '^[[:digit:]]+$') then 
-            dbms_output.put_line('nav kļūda pers kodā 1'); 
+            NULL; 
         else 
-             dbms_output.put_line('ir kļūda pers kodā 1'); 
-             kluda := 1; 
+             dbms_output.put_line('ir kļūda pers koda pirmajā daļā'); 
+             RETURN; 
         end if; 
          
         if REGEXP_LIKE(pers_k2, '^[[:digit:]]+$') then 
-            dbms_output.put_line('nav kļūda pers kodā 2'); 
+            NULL;
         else 
-             dbms_output.put_line('ir kļūda pers kodā 2'); 
-             kluda := 1; 
+             dbms_output.put_line('ir kļūda pers koda otrajā daļā'); 
+             RETURN;  
         end if; 
          
         if REGEXP_LIKE(vards, '[[:alpha:]]+$') then 
-            dbms_output.put_line('nav kļūda vardā'); 
+            NULL;
         else 
-             dbms_output.put_line('ir kļūda vardā'); 
-             kluda := 1; 
+             dbms_output.put_line('kļūda vardā'); 
+             RETURN;  
         end if; 
         if REGEXP_LIKE(uzvards, '[[:alpha:]]+$') then 
-            dbms_output.put_line('nav kļūda vardā'); 
+            NULL; 
         else 
-             dbms_output.put_line('ir kļūda vardā'); 
-             kluda := 1; 
+             dbms_output.put_line('kļūda uzvardā'); 
+             RETURN;  
         end if; 
          
-        if kluda = 1 then 
-            dbms_output.put_line('ipasnieka pievienosana neveiksmīga'); 
-        else 
+
         insert into ipasnieki values (seq_ipasn.nextval,pers_k1 || '-' || pers_k2, 
                                        vards,uzvards); 
-            dbms_output.put_line('ipasnieka pievienosana veiksmīga'); 
-        end if; 
+        dbms_output.put_line('ipasnieka pievienosana veiksmīga'); 
+
      
       
     end new_ipasn; 
@@ -715,7 +748,14 @@ is
     WHERE numurs = mas_nr; 
      
     end del_car; 
-     
+    ----------------------------------------------------------------------------
+    procedure del_carbrand(modelis varchar2, marka varchar2)
+    is 
+    begin
+    
+    NULL;
+    
+    end del_carbrand; 
 begin 
   NULL; 
 end; 
@@ -730,7 +770,7 @@ exec usr_input.new_ipasn('110999','15325','Agnese','kļaviņa');
 
 
 
-exec usr_input.new_car('WAUZZZ6CZ4MA7247', 2010, 1669, 1420, 'AUDI', 'A4', 'GREEN', 2, 1, 'sdsf');
+exec usr_input.new_car('WAUZZZ6CZ4MA7247', 1800, 1669, 1420, 'AUDI', 'A4', 'GREEN', 1, 1, '');
 
 exec usr_input.new_car('WAYHHZ6CZMA3367', 2017, 1839, 1600, 'Mercedes', 'S500', 'GREEN', 2, 1, 'asd');
 
@@ -739,13 +779,6 @@ exec usr_input.new_car('WAYHHZ6CZMA3367', 2017, 1839, 1600, 'Mercedes', 'S500', 
     where modelis = 'A4';
 
 
-/*
-select *
-from user_tables;
-
-select *
-from user_tab_cols;
-*/
 
 create or replace view masinas_view
 as 
