@@ -18,9 +18,6 @@ insert into krasas values ('YELOW','dzeltena');
 insert into krasas values ('ORANG','oranža');
 insert into krasas values ('GREY1','pelēka');
 
-select * from krasas;
-
-
 
 --marku tabula
 create table markas (  
@@ -45,7 +42,7 @@ insert into markas values (seq_marka.nextval,'CITROEN');
 insert into markas values (seq_marka.nextval,'FERRARI');
 insert into markas values (seq_marka.nextval,'Mercedes');
 
-select * from markas;
+
 
 --Modeļu tabula
 create table modeli (  
@@ -56,8 +53,6 @@ marka_id number(4,0) not null);
 
 ALTER TABLE modeli ADD
 CONSTRAINT mod_mark_fk FOREIGN KEY (marka_id) REFERENCES markas (id);
-
---drop table modeli;
 
 CREATE SEQUENCE seq_modelis
 MINVALUE 1
@@ -71,16 +66,12 @@ insert into modeli values (seq_modelis.nextval,'RS6',1);
 insert into modeli values (seq_modelis.nextval,'E220',8);
 insert into modeli values (seq_modelis.nextval,'S500',8);
 
-
-select * from modeli;
-
+--skats, kur var redzēt modeļus un tām atbilstošās markas
 create or replace view mark_modeli
 as 
 select *
 from modeli mo
 left join markas ma on ma.id = mo.marka_id;
-
-
 
 
 --Īpašnieku tabula
@@ -101,12 +92,12 @@ INCREMENT BY 1
 CACHE 10;
 
 insert into ipasnieki values (seq_ipasn.nextval,'071191-34265','Kārlis','Berziņš');
-insert into ipasnieki values (seq_ipasn.nextval,'020591-34265','Ance','Kalniņa');
+insert into ipasnieki values (seq_ipasn.nextval,'020592-32265','Ance','Kalniņa');
+insert into ipasnieki values (seq_ipasn.nextval,'011198-26215','Reinis','Ozols');
+insert into ipasnieki values (seq_ipasn.nextval,'220599-32245','Kristīne','Zariņa');
+insert into ipasnieki values (seq_ipasn.nextval,'110587-64265','Jānis','Arājs');
 
-
-
-
-select * from ipasnieki;
+--select * from ipasnieki;
 
 --Struktūrvienību taula
 create table strukturv (
@@ -125,11 +116,8 @@ insert into strukturv values(seq_strukt_id.nextval, 'Valmiera CSDD');
 insert into strukturv values(seq_strukt_id.nextval, 'Tukums CSDD');
 insert into strukturv values(seq_strukt_id.nextval, 'Talsi CSDD');
 
-select * from strukturv;
-
 
 --Numuru intervālu tabua
---drop table numinterv;
 create table numinterv(
 nrBurti varchar(2) not null constraint num_interv_pk primary key,
 nogenMNr number(1) DEFAULT 0,
@@ -138,26 +126,20 @@ strukt_id number(5,0) not null);
 ALTER TABLE numinterv ADD
 CONSTRAINT num_strukt_fk FOREIGN KEY (strukt_id) REFERENCES strukturv (id);
 
-
 insert into numinterv values ('AA', 0, 1);
 insert into numinterv values ('AB', 0, 2);
 insert into numinterv values ('AC', 0, 3);
---insert into numinterv values (num_interv_id.nextval, 'AP', 0, 2);
 
-
-select * 
-from numinterv
-ORDER BY strukt_id;
-
+--skats, kurā var redzēt, kurai struktūrvienībai pieder numuru intervāls
 create or replace view strukt_burti_view 
 as  
-select i.nrburti, i.nogenMNr, s.nosauk 
+select s.nosauk as "Struktūrvienība", i.nrburti as "Nr intervāls", 
+        i.nogenMNr as "Noģenerēts" 
 from numinterv i 
-left join strukturv s on s.id = i.strukt_id
+left join strukturv s on s.id = i.strukt_id;
 
 
 --Mašīnu numuri
---drop table numuri CASCADE CONSTRAINTS;
 create table numuri (  
 numurs varchar(7) not null constraint nr_pk primary key,  
 statuss varchar2(20),
@@ -167,21 +149,11 @@ strukt_id number(5,0) not null);
 ALTER TABLE numuri ADD
 CONSTRAINT nr_strukt_fk FOREIGN KEY (strukt_id) REFERENCES strukturv (id);
 
-/*
-insert into numuri values ('AA1212', 'b', 0, 1);
-insert into numuri values ('AB1211', 'b', 0, 2);
-insert into numuri values ('AA1132', 'b', 0, 1);
-insert into numuri values ('KASPARS', 'b', 1, 3);
-insert into numuri values ('AA1213', 'b', 0, 1);
-insert into numuri values ('AA2212', 'b', 0, 1);
-insert into numuri values ('AA1111', 'b', 0, 1);
-*/
-
-select * from numuri;
-
-
 
 --------------------------------------------------------------------------------
+-- Pakotne nummuru generēšanai intervālā,
+-- numuru intervāla pievienošanai,
+-- intervāla dzēšani
 create or replace package numuri_pack 
 is 
     procedure generet_nr(in_burti varchar2); 
@@ -320,18 +292,7 @@ end;
 /
 
 
-
-
-exec numuri_pack.delete_interv('AB');
-exec numuri_pack.generet_nr('AA');
-
-exec numuri_pack.next_nr_interv(4);
-select * from strukt_burti_view;
-select * from numuri;
-
-
 --Reģistrācijas apliecību numuru intevali
---drop table aplinterv;
 create table aplinterv(
 aplBurti varchar(2) not null constraint apl_interv_pk primary key,
 nogen_apl number(1) DEFAULT 0,
@@ -345,14 +306,12 @@ insert into aplinterv values ('AA', 0, 1);
 insert into aplinterv values ('AB', 0, 2);
 insert into aplinterv values ('AC', 0, 3);
 
-select * 
-from aplinterv
-ORDER BY strukt_id;
 
+-- Skats lai redzētu reg apliecību intervākus un stuktūrvienību, kurai pieder
 create or replace view apl_interv_view 
 as  
 select s.nosauk as "Struktūrvienība", 
-    i.aplBurti as "Intervāls", 
+    i.aplBurti as "Reg apl Intervāls", 
     i.nogen_apl as "Noģenerēts" 
 from aplinterv i 
 left join strukturv s on s.id = i.strukt_id;
@@ -361,7 +320,6 @@ select * from apl_interv_view;
 
 
 --Reg Apliecību numuri
---drop table apliecibas CASCADE CONSTRAINTS;
 create table apliecibas (  
 numurs varchar(9) not null constraint apl_pk primary key,  
 statuss varchar2(20),
@@ -370,15 +328,12 @@ strukt_id number(5,0) not null);
 ALTER TABLE apliecibas ADD
 CONSTRAINT napl_strukt_fk FOREIGN KEY (strukt_id) REFERENCES strukturv (id);
 
-/*
-insert into apliecibas values ('BA1212567', 'b', 1);
-insert into apliecibas values ('BB1231211', 'b', 2);
-insert into apliecibas values ('BC1537211', 'b', 3);
-insert into apliecibas values ('BA9212567', 'b', 1);
-insert into apliecibas values ('BB2231211', 'b', 2);
-*/
-select * from apliecibas;
+
+
 --------------------------------------------------------------------------------
+-- Pakotne reg apliecību generēšanai intervālā,
+-- reg apliecību intervāla pievienošanai,
+-- intervāla dzēšani
 create or replace package apliecibas_pack
 is
     procedure generet_apliec(in_burti varchar2);
@@ -517,18 +472,7 @@ begin
 end; 
 /
 
-
-exec apliecibas_pack.delete_interv('AA');
-
-exec apliecibas_pack.generet_apliec('AA');
-
-exec apliecibas_pack.next_apl_interv(2);
-
-select * from apl_interv_view;
-
-
-
---drop table masinas;
+--Tabula ar mašīnām(informācija, kas ir reģistrācijas apliecībā)
 create table masinas( 
 shasijas_nr varchar(17) not null constraint sas_nr_pk primary key,  
 gads number(4),
@@ -562,13 +506,11 @@ ALTER TABLE masinas ADD
 CONSTRAINT mas_ipasn_fk FOREIGN KEY (ipasn_id) REFERENCES ipasnieki (id);
 
 
-insert into masinas values ('WAUZZZ8CZNA123456','2015',1766,1533,2,'RED01',1,'BA1212567','AD9990',2,'');
 
-select *
-from masinas;
-
-
-
+------------------------------------------------------------------------------
+-- Pakotne lai piereģistrētu jaunu mašinu,
+-- jaunu lietotāju,
+-- dzēstu mašīnu
 create or replace package usr_input 
 is 
  
@@ -596,7 +538,8 @@ is
     model_id number(5); 
     mas_nr varchar2(7); 
     mas_apl varchar2(9); 
-    kluda number(1); 
+    kluda number(1);
+    briv_nr number(5);
     procedure new_car(vin varchar2, gads number, pilnmas number, pasmas number,  
                     in_marka varchar2, in_modelis varchar2, krasa varchar2, 
                     strukt number, ipasnid  number, specal_nr varchar2) 
@@ -626,7 +569,20 @@ is
     dbms_output.put_line(model_id); 
      
  
-    --mašīnas numurs     
+    --mašīnas numurs 
+    
+        briv_nr :=1;
+        
+        select count(*) into briv_nr 
+        from numuri 
+        WHERE statuss = 'b'
+        and strukt_id = strukt;
+        
+        if briv_nr = 0 then
+            dbms_output.put_line('Struktūrvienībā nav brīvu numuru'); 
+            return;
+        end if;
+    
     if length(specal_nr) > 1 then 
         mas_nr := specal_nr; 
         insert into numuri values (specal_nr, 'a', 1, strukt); 
@@ -648,6 +604,18 @@ is
     end if; 
      
     --Reģistrācijas aplieciba 
+ 
+         briv_nr :=1;
+        
+        select count(*) into briv_nr 
+        from apliecibas 
+        WHERE statuss = 'b'
+        and strukt_id = strukt;
+        
+        if briv_nr = 0 then
+            dbms_output.put_line('Struktūrvienībā nav brīvu apliecības numuru'); 
+            return;
+        end if;
  
  
     select numurs into mas_apl 
@@ -763,23 +731,7 @@ end;
 
 
 
-
-
-exec usr_input.new_ipasn('110999','15325','Agnese','kļaviņa');
-
-
-
-
-exec usr_input.new_car('WAUZZZ6CZ4MA7247', 1800, 1669, 1420, 'AUDI', 'A4', 'GREEN', 1, 1, '');
-
-exec usr_input.new_car('WAYHHZ6CZMA3367', 2017, 1839, 1600, 'Mercedes', 'S500', 'GREEN', 2, 1, 'asd');
-
-    select mod_id
-    from mark_modeli
-    where modelis = 'A4';
-
-
-
+-- Skats, kurā var redzēt visu informāciju par mšīnu
 create or replace view masinas_view
 as 
 select m.shasijas_nr as "Šasijas nr", m.gads, m.piln_masa as "Pilna masa",
@@ -800,5 +752,44 @@ left join ipasnieki i
 on m.ipasn_id = i.id;
 
 
-select * from masinas_view  
-where "Šasijas nr" is not null;
+
+select * from mark_modeli;
+
+select * from strukt_burti_view;
+select * from apl_interv_view;
+
+select * from numuri;
+select * from apliecibas;
+
+-------------------------------------------
+exec numuri_pack.generet_nr('AA');
+exec apliecibas_pack.generet_apliec('AA');
+select * from numuri;
+select * from apliecibas;
+
+-------------------------------------------
+exec numuri_pack.next_nr_interv(5);
+exec apliecibas_pack.next_apl_interv(5);
+select * from strukt_burti_view;
+select * from apl_interv_view;
+select * from numuri;
+select * from apliecibas;
+
+-------------------------------------------
+exec usr_input.new_car('WAUZZZ6CZ4MA8255', 2010, 1859, 1621, 'AUDI', 'A6', 'GREY1', 5, 1, '');
+exec usr_input.new_car('WAUZZZ6CZ4MA8247', 2014, 1949, 1520, 'AUDI', 'A4', 'GREEN', 5, 1, '');
+exec usr_input.new_car('WAUZZZ6CZ4MA2257', 2012, 1849, 1560, 'AUDI', 'A6', 'WHITE', 5, 2, '');
+exec usr_input.new_car('WAUZZZ6CZ4MA8254', 2017, 1849, 1360, 'Mercedes', 'S500', 'RED01', 5, 5, '');
+exec usr_input.new_car('WAUZZZ7CZ4MA8255', 2010, 1849, 1660, 'AUDI', 'A6', 'GREEN', 5, 3, '');
+exec usr_input.new_car('WAUZZZ6CZ4MA8256', 2012, 1724, 1260, 'AUDI', 'RS6', 'BLUE1', 5, 4, '');
+exec usr_input.new_car('WAUZZZ6CZ4MA8257', 2007, 1929, 1264, 'Mercedes', 'E220', 'GREY1', 5, 4, '');
+exec usr_input.new_car('WAUZZZ6CZ4MA8258', 2009, 1842, 1460, 'Mercedes', 'E220', 'YELOW', 5, 2, '');
+exec usr_input.new_car('WAUZZZ6CZ4MA8259', 2001, 1729, 1262, 'Mercedes', 'S500', 'VIOLT', 5, 3, '');
+exec usr_input.new_car('WAUZZZ6CZ8MA8254', 1995, 1729, 1367, 'AUDI', 'A6', 'BLACK', 5, 4, '');
+
+select * from masinas_view; 
+select * from numuri;
+select * from apliecibas;
+----------------------------------------
+
+exec usr_input.new_car('WAUZZZ6CZ8MA1254', 1995, 1729, 1367, 'AUDI', 'A6', 'BLACK', 5, 4, '');
